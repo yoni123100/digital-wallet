@@ -1,0 +1,28 @@
+version: '3.5'
+
+services:
+  transaction_mongo:
+    image: mongo:4.4.6
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=paybox
+      - MONGO_INITDB_ROOT_PASSWORD=paybox_pass
+      - MONGO_INITDB_ROOT_DATABASE=admin
+    ports:
+      - 27017:27017
+    volumes:
+      - trans_data:/data/db
+
+  users_mongo:
+    image: mongo:4.4.6
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=paybox_users
+      - MONGO_INITDB_ROOT_PASSWORD=paybox_users_pass
+      - MONGO_INITDB_ROOT_DATABASE=admin
+    ports:
+      - 27018:27017
+    volumes:
+      - users_data:/data/db
+
+volumes:
+  trans_data:
+  users_data:
