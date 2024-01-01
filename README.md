@@ -1,10 +1,24 @@
+# Setup
+
 Donwload concurrently using npm i -g concurrently
 
-1. npm i
-2. npm run start:dev -- will run all microservices
+## Notice!
 
-localhost:3000/api - will open a swagger page for testing
+### Before running this project you should run 2 seperated MongoDB instances (2 docker containers for example) and both of them should have a Replica set (at least one, single-mode)
 
-Notice!
-Before running the project you should run mongodb as well, you may do so by writing "docker compose up -d" command it will start
-2 docker container with the required auth data
+---
+
+## Project run steps:
+
+    1. npm i
+    2. npm run start:dev // will run all microservices
+
+## Testing
+
+I used Swagger for as my personal postman, as I love his great UI
+
+http://localhost:3000/api - Will bring you to the Swagger's page
+
+# Architecture
+
+![alt text](digital_wallet_arch.png)
