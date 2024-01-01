@@ -1,4 +1,6 @@
-# Setup
+# Setup & Prerequisites
+
+Developed on Node v19.0.0 & used npm 8.19.2
 
 Donwload concurrently using npm i -g concurrently
 

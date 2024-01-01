@@ -32,8 +32,6 @@ export class TransactionsController {
 
   @MessagePattern(MicroservicePatterns.TRANSACTIONS.PROCEED)
   proceed(@Payload() proceedTransactionDto: ProceedTransactionDTO) {
-    console.log(proceedTransactionDto);
-
     return this.transactionsService.proceed(proceedTransactionDto);
   }
 }

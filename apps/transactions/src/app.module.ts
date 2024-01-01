@@ -16,11 +16,8 @@ import { MongooseModule } from '@nestjs/mongoose';
     }),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService<AppConfiguration>) => {
-        console.log(configService.get('mongoOptions'));
-
-        return configService.get('mongoOptions');
-      },
+      useFactory: async (configService: ConfigService<AppConfiguration>) =>
+        configService.get('mongoOptions'),
     }),
     TransactionsModule,
   ],

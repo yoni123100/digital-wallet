@@ -5,7 +5,6 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const { brokerSettings } = config();
-  console.log(brokerSettings);
 
   const app = await NestFactory.createMicroservice(AppModule, brokerSettings);
   const logger = new Logger();

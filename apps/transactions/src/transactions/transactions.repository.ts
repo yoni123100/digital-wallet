@@ -21,13 +21,17 @@ export class TransactionRepository {
     this.microserviceUtil = new MicroserviceUtil(usersClientProxy);
   }
 
+  /**
+   *
+   * @param ProceedTransactionDTO - { id, requestedStatus }
+   * @returns boolean - If the transaction succeeded
+   * @description This functions purpose simulates user clicks on "accept" on any of his transactions
+   */
   async proceedTransaction({ id, requestedStatus }: ProceedTransactionDTO) {
     if (!this.transacationExists(id)) throw new RpcException('Transaction does not exists!');
 
     const session = await this.transactionModel.startSession();
-    let status = false;
-
-    // console.log('started');
+    let didTransactionComplated = false;
 
     try {
       session.startTransaction();
@@ -55,6 +59,7 @@ export class TransactionRepository {
         const result = await this.microserviceUtil.send(MicroservicePatterns.USERS.SEND_MONEY, dto);
 
         if (!result) {
+          // If not enough money for example we would like to cancel the transaction
           transactionDoc.status = TransactionStatus.CANCELED;
         } else {
           transactionDoc.status = TransactionStatus.ACCEPTED;
@@ -68,8 +73,9 @@ export class TransactionRepository {
 
       await session.commitTransaction();
 
-      status = true;
-      // send notification to users for Transaction status update
+      didTransactionComplated = true;
+      // send notification to transaction sender and receiver about the new status
+      // sendNotification()
     } catch (error) {
       console.log(error);
 
@@ -78,7 +84,7 @@ export class TransactionRepository {
       await session.endSession();
     }
 
-    return status;
+    return didTransactionComplated;
   }
 
   async get(id: string) {

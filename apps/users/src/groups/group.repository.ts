@@ -2,10 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Model, isValidObjectId } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { RpcException } from '@nestjs/microservices';
-import { Group } from './group.schema';
+import { Group, GroupDocument } from './group.schema';
 import { CreateGroupDTO } from 'shared/dtos/groups/create-group.dto';
 import { AddMoneyToGroupDTO, UpdateGroupDTO } from 'shared/dtos/groups/update-group.dto';
 import { UserService } from '../users/users.service';
+import { UserDocument } from '../users/user.schema';
 
 @Injectable()
 export class GroupRepository {
@@ -20,12 +21,12 @@ export class GroupRepository {
     return !!(await this.groupModel.findById(id).select('_id').lean().exec());
   }
 
-  async get(id: string) {
+  async get(id: string, lean?: boolean) {
     if (!isValidObjectId(id)) {
       throw new RpcException('Received not a valid group id!');
     }
 
-    return this.groupModel.findById(id).lean().exec();
+    return this.groupModel.findById(id, {}, { lean }).exec();
   }
 
   async create(createGroupDto: CreateGroupDTO): Promise<Group> {
@@ -51,9 +52,7 @@ export class GroupRepository {
   async joinUser({ id, newUserId, enteringAmount }: UpdateGroupDTO): Promise<boolean> {
     const session = await this.groupModel.startSession();
 
-    console.log('asdas');
-
-    let status = false;
+    let hasOperationSucceeded = false;
     try {
       session.startTransaction();
 
@@ -76,26 +75,34 @@ export class GroupRepository {
 
       await session.commitTransaction();
 
-      status = true;
+      hasOperationSucceeded = true;
     } catch (error) {
       this.logger.error(`Failed to add ${newUserId} to group ${id}`);
       await session.abortTransaction();
+
+      throw error;
     } finally {
       await session.endSession();
     }
 
-    return status;
+    return hasOperationSucceeded;
   }
 
+  // Add money from one user to other group
   async addMoney({ from, id, amount }: AddMoneyToGroupDTO) {
     const session = await this.groupModel.startSession();
     let status = false;
     try {
       session.startTransaction();
 
-      await this.usersService.withdraw(from, amount);
-
+      // Check if user is in group
       const currentGroup = await this.groupModel.findById(id).session(session);
+      const userPartOfGroup = await this.checkUserIsMember(from, id);
+      if (!userPartOfGroup) {
+        throw new RpcException('');
+      }
+
+      await this.usersService.withdraw(from, amount);
 
       currentGroup.amount += amount;
 
@@ -109,10 +116,19 @@ export class GroupRepository {
     } catch (error) {
       this.logger.error(`Failed to add money to group ${id} from ${from} (${amount})`);
       await session.abortTransaction();
+
+      throw error; // Pass the RpcException to upper call stack (because of the try/catch)
     } finally {
       await session.endSession();
     }
 
     return status;
+  }
+
+  private async checkUserIsMember(userId: string, groupId: string) {
+    // Find a group that has same groupId and his users property contains userId, if not found then his is not a member of the group
+    const exists = await this.groupModel.findOne({ _id: groupId, users: { $in: [userId] } }).exec();
+
+    return !!exists;
   }
 }
